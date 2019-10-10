@@ -1,0 +1,18 @@
+name: square_cli
+description: A sample command-line application.
+# version: 1.0.0
+# homepage: https://www.example.com
+# author: bsutton <bsutton@noojee.com.au>
+
+environment:
+  sdk: '>=2.5.0 <3.0.0'
+
+dependencies:
+  args: ^1.5.2
+  path: ^1.6.4
+  pedantic: ^1.8.0
+  
+#  path: ^1.6.0
+
+dev_dependencies:
+  test: ^1.6.0
