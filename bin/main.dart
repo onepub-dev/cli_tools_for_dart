@@ -28,16 +28,26 @@ void process(String fromPattern, String toPattern) async {
   List<FileSystemEntity> dartFiles =
       await files.where((file) => file.path.endsWith(".dart")).toList();
 
+  int scanned = 0;
+  int updated = 0;
   for (var file in dartFiles) {
-    File tmpFile = await replaceString(file, fromPattern, toPattern);
+    scanned++;
+    Result result = await replaceString(file, fromPattern, toPattern);
+    File tmpFile = result.tmpFile;
 
-    FileSystemEntity backupFile = await file.rename(file.path + ".bak");
-    await tmpFile.rename(file.path);
-    await backupFile.delete();
+    if (result.changeCount != 0) {
+      updated++;
+      FileSystemEntity backupFile = await file.rename(file.path + ".bak");
+      await tmpFile.rename(file.path);
+      await backupFile.delete();
+
+      print("Updated : ${file.path} changed ${result.changeCount} lines");
+    }
   }
+  print("Finished: scanned $scanned updated $updated");
 }
 
-Future<File> replaceString(
+Future<Result> replaceString(
     FileSystemEntity file, String fromPattern, String toPattern) async {
   Directory systemTempDir = Directory.systemTemp;
 
@@ -49,25 +59,33 @@ Future<File> replaceString(
 
   IOSink tmpSink = tmpFile.openWrite();
 
+  Result result = Result(tmpFile);
+
   await File(file.path)
       .openRead()
       .transform(utf8.decoder)
       .transform(LineSplitter())
-      .forEach((line) => replaceLine(line, fromPattern, toPattern, tmpSink));
+      .forEach((line) => result.changeCount +=
+          replaceLine(line, fromPattern, toPattern, tmpSink));
 
-  print("File: ${file.path} written to: ${tmpFile}");
-
-  return tmpFile;
+  return result;
 }
 
-void replaceLine(
+int replaceLine(
     String line, String fromPattern, String toPattern, IOSink tmpSink) {
   String newLine = line;
+
+  int changeCount = 0;
 
   if (line.startsWith("import")) {
     newLine = line.replaceAll(fromPattern, toPattern);
   }
+  if (line != newLine) {
+    changeCount++;
+  }
   tmpSink.writeln(newLine);
+
+  return changeCount;
 }
 
 void usage(ArgParser parser) {
@@ -75,4 +93,11 @@ void usage(ArgParser parser) {
   print("<from string> <to string>");
   print("e.g. AppClass app_class");
   print(parser.usage);
+}
+
+class Result {
+  File tmpFile;
+  int changeCount = 0;
+
+  Result(this.tmpFile);
 }
