@@ -29,11 +29,15 @@ void process(String fromPattern, String toPattern) async {
       await files.where((file) => file.path.endsWith(".dart")).toList();
 
   for (var file in dartFiles) {
-    replaceString(file, fromPattern, toPattern);
+    File tmpFile = await replaceString(file, fromPattern, toPattern);
+
+    FileSystemEntity backupFile = await file.rename(file.path + ".bak");
+    await tmpFile.rename(file.path);
+    await backupFile.delete();
   }
 }
 
-void replaceString(
+Future<File> replaceString(
     FileSystemEntity file, String fromPattern, String toPattern) async {
   Directory systemTempDir = Directory.systemTemp;
 
@@ -52,11 +56,17 @@ void replaceString(
       .forEach((line) => replaceLine(line, fromPattern, toPattern, tmpSink));
 
   print("File: ${file.path} written to: ${tmpFile}");
+
+  return tmpFile;
 }
 
 void replaceLine(
     String line, String fromPattern, String toPattern, IOSink tmpSink) {
-  String newLine = line.replaceAll(fromPattern, toPattern);
+  String newLine = line;
+
+  if (line.startsWith("import")) {
+    newLine = line.replaceAll(fromPattern, toPattern);
+  }
   tmpSink.writeln(newLine);
 }
 
