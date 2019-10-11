@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:yaml/yaml.dart';
+import 'patch_command.dart';
 
 class Yaml {
   String filename;
@@ -19,3 +20,5 @@ class Yaml {
     return document.contents.value[key];
   }
 }
+
+PatchCommand test;

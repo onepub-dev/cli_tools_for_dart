@@ -9,6 +9,7 @@ import 'package:yaml/yaml.dart';
 import 'yaml.dart';
 
 class MoveCommand extends Command {
+  Directory lib = Directory("lib");
   @override
   String get description =>
       "Moves a dart library and updates all import statements to reflect its now location.";
@@ -19,7 +20,10 @@ class MoveCommand extends Command {
   String _projectName;
 
   void run() async {
-    Directory.current = "./test/data";
+    // remove after testing complete
+    Directory.current = "./test/data/";
+
+    lib = Directory(p.join(Directory.current.path, 'lib'));
 
     if (argResults.rest.length != 2) {
       fullusage();
@@ -33,25 +37,15 @@ class MoveCommand extends Command {
     _projectName = yaml.getValue("name");
 
     // check we are in the root.
-    if (!await Directory("lib").exists()) {
+    if (!await lib.exists()) {
       fullusage(error: "You must run a move from the root of the package.");
     }
+
     String from = argResults.rest[0];
     String to = argResults.rest[1];
 
-    File fromPath = File(from);
-    if (!await validFrom(fromPath)) {
-      fullusage(
-          error:
-              "The <fromPath> is not a valid filepath: '${p.join(Directory.current.path, fromPath.path)}'");
-    }
-
-    File toPath = File(to);
-    if (!await validTo(toPath)) {
-      fullusage(
-          error:
-              "The <toPath> is not a valid filepath: ${p.join(Directory.current.path, toPath.path)}");
-    }
+    File fromPath = await validFrom(from);
+    File toPath = await validTo(to);
 
     process(fromPath, toPath);
   }
@@ -71,13 +65,15 @@ class MoveCommand extends Command {
 
       if (result.changeCount != 0) {
         updated++;
-        // FileSystemEntity backupFile = await file.rename(file.path + ".bak");
-        // await tmpFile.rename(file.path);
-        // await backupFile.delete();
+        FileSystemEntity backupFile = await file.rename(file.path + ".bak");
+        await tmpFile.rename(file.path);
+        await backupFile.delete();
 
         print("Updated : ${file.path} changed ${result.changeCount} lines");
       }
     }
+
+    await fromPath.rename(toPath.path);
     print("Finished: scanned $scanned updated $updated");
   }
 
@@ -95,27 +91,31 @@ class MoveCommand extends Command {
 
     MoveResult result = MoveResult(tmpFile);
 
+    // print("Scanning: ${file.path}");
+
+    bool externalLib = !isUnderLib(file);
+
     await File(file.path)
         .openRead()
         .transform(utf8.decoder)
         .transform(LineSplitter())
-        .forEach((line) =>
-            result.changeCount += replaceLine(line, fromPath, toPath, tmpSink));
+        .forEach((line) => result.changeCount +=
+            replaceLine(file, line, fromPath, toPath, tmpSink, externalLib));
 
     return result;
   }
 
-  int replaceLine(String line, File fromPath, File toPath, IOSink tmpSink) {
-    String normalised = normalise(line);
-
-    String newLine = normalised;
+  int replaceLine(File currentFile, String line, File fromPath, File toPath,
+      IOSink tmpSink, bool externalLib) {
+    String newLine = line;
 
     int changeCount = 0;
 
     // Does the line contain our fromPath
-    newLine = actualReplaceLine(normalised, fromPath, toPath);
+    newLine =
+        actualReplaceLine(currentFile, line, fromPath, toPath, externalLib);
 
-    if (line != normalised) {
+    if (line != newLine) {
       changeCount++;
     }
     tmpSink.writeln(newLine);
@@ -126,33 +126,46 @@ class MoveCommand extends Command {
   ///
   /// Takes a normalised line (local package: removed)
   /// and determines if it references our fromFile
-  String actualReplaceLine(String normalised, File fromFile, File toFile) {
-    String line = normalised;
+  String actualReplaceLine(File currentFile, String line, File fromFile,
+      File toFile, bool externalLib) {
+    String normalised = normalise(line);
 
     // import 'package:square_phone/yaml.dart';  - consider
     // import 'package:yaml/yaml.dart'; - ignore
     // import 'yaml.dart'; - consider.
 
+    ///NOTE: all imports are relative to the 'lib' directory.
+
     if (normalised.startsWith("import")) {
       {
-        String relative = p.relative(fromFile.path);
+        String fromPath = p.relative(fromFile.path, from: lib.path);
 
         String regexString = r"'.*'";
         RegExp regExp = RegExp(regexString);
-        var matches = regExp.allMatches(normalised);
-        if (matches.length != 1) {
+        String matches = regExp.stringMatch(normalised);
+        if (matches.isEmpty) {
           throw Exception(
               "import line did not contain a valid path: ${normalised}");
         }
-        var match = matches.elementAt(0);
-        if (match.groupCount != 1) {
-          throw Exception(
-              "import line did not contain a valid path: ${normalised}");
-        }
-        String importPath = match.group(0);
+        String importPath = matches.substring(1, matches.length - 1);
         String relativeImportPath = p.relative(importPath);
-        if (relativeImportPath == relative) {
-          line = "import '${toFile.path}'";
+
+        // does the import path match the file we are looking to change.
+        if (relativeImportPath == fromPath) {
+          String relativeTo = p.relative(toFile.path, from: lib.path);
+          if (externalLib) {
+            line = "import 'package:${_projectName}/${relativeTo}';";
+          } else {
+            line = "import '${relativeTo}';";
+          }
+        } else {
+          if (currentFile.path == fromFile.path) {
+            // If we are processing the file we are moving
+            // we need to also update all of its imports.
+            // Imports a relative and if we have moved directories
+            // we need to correct the path.
+            line = "import '${relativeImportPath}';";
+          }
         }
       }
     }
@@ -174,6 +187,11 @@ class MoveCommand extends Command {
 
         if (line.contains(projectPackage)) {
           normalised = line.replaceFirst(projectPackage, "");
+          // import '/
+          if (normalised[8] == "/") {
+            // strip leading slash as a paths must be relative.
+            normalised = normalised.replaceFirst("/", "");
+          }
         }
       }
     }
@@ -185,6 +203,7 @@ class MoveCommand extends Command {
       print("Error: $error");
       print("");
     }
+
     print("Usage: ");
     print("Run the move from the root of the package");
     print("move <from path> <to path>");
@@ -207,12 +226,38 @@ class MoveCommand extends Command {
     return "fred";
   }
 
-  Future<bool> validFrom(File fromPath) async {
-    return await fromPath.exists();
+  Future<File> validFrom(String from) async {
+    // all file paths are relative to lib/ but
+    // the imports don't include lib so devs
+    // will just pass in the name as the see it in the import statement (e.g. no lib)
+    // but when we are validating the actual path we need the lib.
+    File actualPath = File(p.canonicalize(p.join("lib", from)));
+
+    if (!await actualPath.exists()) {
+      fullusage(
+          error:
+              "The <fromPath> is not a valid filepath: '${actualPath.path}'");
+    }
+    return actualPath;
   }
 
-  Future<bool> validTo(toPath) async {
-    return await toPath.parent.exists();
+  Future<File> validTo(String to) async {
+    // all file paths are relative to lib/ but
+    // the imports don't include lib so devs
+    // will just pass in the name as the see it in the import statement (e.g. no lib)
+    // but when we are validating the actual path we need the lib.
+    File actualPath = File(p.canonicalize(p.join("lib", to)));
+    if (!await actualPath.parent.exists()) {
+      fullusage(
+          error: "The <toPath> directory does not exist: ${actualPath.parent}");
+    }
+    return actualPath;
+  }
+
+  ///
+  /// Returns true if the library is under the lib directory
+  bool isUnderLib(FileSystemEntity file) {
+    return p.isWithin(lib.path, file.path);
   }
 }
 

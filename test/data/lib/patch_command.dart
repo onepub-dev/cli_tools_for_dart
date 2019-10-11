@@ -42,13 +42,20 @@ class PatchCommand extends Command {
 
       if (result.changeCount != 0) {
         updated++;
+
+        // copy the temp files over the actual file
         FileSystemEntity backupFile = await file.rename(file.path + ".bak");
         await tmpFile.rename(file.path);
         await backupFile.delete();
 
+        //
+
         print("Updated : ${file.path} changed ${result.changeCount} lines");
       }
     }
+    // rename the file file.
+    await File(fromPattern).rename(toPattern);
+
     print("Finished: scanned $scanned updated $updated");
   }
 
