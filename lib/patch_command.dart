@@ -6,7 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 
-class PatchCommand extends Command {
+class PatchCommand extends Command<void> {
   @override
   String get description =>
       "Patches import statements by doing a string replace.";

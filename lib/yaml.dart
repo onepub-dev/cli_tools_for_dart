@@ -16,6 +16,6 @@ class Yaml {
   /// reads the project name from the yaml file
   ///
   String getValue(String key) {
-    return document.contents.value[key];
+    return document.contents.value[key] as String;
   }
 }

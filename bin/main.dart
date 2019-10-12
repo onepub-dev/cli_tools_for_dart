@@ -4,7 +4,8 @@ import 'package:square_cli/move_command.dart';
 import 'package:square_cli/patch_command.dart';
 
 void main(List<String> arguments) {
-  CommandRunner runner = CommandRunner("drtimport", "dart import management");
+  CommandRunner<void> runner =
+      CommandRunner("drtimport", "dart import management");
 
   runner.addCommand(MoveCommand());
   runner.addCommand(PatchCommand());

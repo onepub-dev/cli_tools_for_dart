@@ -13,5 +13,5 @@ Future<String> getProjectName() async {
 
   YamlDocument pubSpec = loadYamlDocument(contents);
   print(pubSpec.contents.value["name"]);
-  return pubSpec.contents.value["name"];
+  return pubSpec.contents.value["name"] as String;
 }

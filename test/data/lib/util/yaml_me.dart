@@ -1,13 +1,15 @@
 import 'dart:io';
 
+import '../b_command.dart';
 import 'package:yaml/yaml.dart';
-import 'patch_command.dart';
 
-class Yaml {
+import '../a_command2.dart' as a;
+
+class YamlMe {
   String filename;
   YamlDocument document;
 
-  Yaml(this.filename);
+  YamlMe(this.filename);
 
   void load() async {
     String contents = await File("pubspec.yaml").readAsString();
@@ -17,8 +19,11 @@ class Yaml {
   /// reads the project name from the yaml file
   ///
   String getValue(String key) {
-    return document.contents.value[key];
+    return document.contents.value[key] as String;
   }
 }
 
-PatchCommand test;
+void fred() {
+  BCommand();
+  a.ACommand();
+}
