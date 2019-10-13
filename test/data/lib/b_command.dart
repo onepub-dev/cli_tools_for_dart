@@ -5,7 +5,7 @@ import 'package:path/path.dart' as p;
 import 'package:args/command_runner.dart';
 
 import 'a_command2.dart';
-import 'util/yaml_me.dart';
+import 'package:drtimport/util/yaml_me.dart';
 
 class BCommand extends Command<void> {
   Directory lib;

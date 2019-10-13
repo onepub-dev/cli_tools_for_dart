@@ -1,6 +1,6 @@
 import 'package:args/command_runner.dart';
-import 'package:square_cli/a_command2.dart';
-import 'package:square_cli/b_command.dart';
+import 'package:drtimport/a_command2.dart';
+import 'package:drtimport/b_command.dart';
 
 void main(List<String> arguments) {
   CommandRunner<void> runner =

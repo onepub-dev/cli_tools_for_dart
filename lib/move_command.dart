@@ -20,7 +20,7 @@ class MoveCommand extends Command<void> {
 
   void run() async {
     // remove after testing complete
-    Directory.current = "./test/data/";
+    // Directory.current = "./test/data/";
 
     libRoot = Directory(p.join(Directory.current.path, 'lib'));
 

@@ -157,33 +157,35 @@ class Line {
       importsRelativePath = p.relative(importedPath, from: libRoot.path);
 
       if (currentLibrary.sourceFile.path == fromFile.path) {
-        // If we are processing the file we are moving
-        // we need to also update all of its imports.
-        // Imports a relative and if we have moved directories
-        // we need to correct the path.
+        // We are processing the file we are moving.
         String relativeImportPath = p.relative(importedPath,
             from: currentLibrary.sourceFile.parent.path);
         String newImportPath =
             calcNewImportPath(fromFile.path, relativeImportPath, toFile.path);
-        line = replaceImportPath('${newImportPath}');
-      } else
-      // does the import path match the file we are looking to change.
-      if (importsRelativePath == relativeFromPath) {
-        /// [externalLib] The library we are parsing is outside the lib dir (e.g. bin/main.dart)
-        if (currentLibrary.isExternal) {
-          // relative to the 'lib' directory.
-          String relativeToRoot = p.relative(toFile.path, from: libRoot.path);
-          line = replaceImportPath('package:${_projectName}/${relativeToRoot}');
-        } else if (_importType == ImportType.LOCAL_PACKAGE) {
-          // relative to the 'lib' directory.
-          String relativeToRoot = p.relative(toFile.path, from: libRoot.path);
-          line = replaceImportPath('package:${_projectName}/${relativeToRoot}');
-        } else {
-          // must be a [ImportType.RELATIVE]
-          String relativeToLibrary = p.relative(toFile.path,
-              from: currentLibrary.sourceFile.parent.path);
 
-          line = replaceImportPath('${relativeToLibrary}');
+        line = replaceImportPath('${newImportPath}');
+      } else {
+        // processing any file but the one we are moving.
+        String relativeToLibrary = p.relative(toFile.path,
+            from: currentLibrary.sourceFile.parent.path);
+        String relativeToRoot = p.relative(toFile.path, from: libRoot.path);
+
+        // does the import path match the file we are looking to change.
+        if (importsRelativePath == relativeFromPath) {
+          /// [externalLib] The library we are parsing is outside the lib dir (e.g. bin/main.dart)
+          if (currentLibrary.isExternal) {
+            // relative to the 'lib' directory.
+            line =
+                replaceImportPath('package:${_projectName}/${relativeToRoot}');
+          } else if (_importType == ImportType.LOCAL_PACKAGE) {
+            // relative to the 'lib' directory.
+            line = replaceImportPath(
+                'package:${_projectName}/${relativeToLibrary}');
+          } else {
+            // must be a [ImportType.RELATIVE]
+
+            line = replaceImportPath('${relativeToLibrary}');
+          }
         }
       }
     }
