@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
+import 'package:square_cli/dart_import_app.dart';
 
 import 'line.dart';
 import 'move_result.dart';
@@ -13,6 +14,13 @@ class Library {
 
   Library(this.sourceFile, this.libRoot) {
     externalLib = !_isUnderLibRoot();
+
+    if (this.sourceFile.path.endsWith("office_holidays_dashlet.dart")) {
+      DartImportApp().debug("office_holidays_dashlet");
+    }
+
+    DartImportApp()
+        .debug("Processing: ${sourceFile} externalLib: $externalLib");
   }
 
   // File get file => sourceFile;

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:path/path.dart' as p;
 
+import 'dart_import_app.dart';
 import 'library.dart';
 import 'yaml.dart';
 
@@ -82,17 +83,29 @@ class Line {
   // import 'dart:io'; - ignore
   // import 'yaml.dart'; - consider.
 
+  /// Extracts the import path and returns
+  /// an absolute path,
+  /// unless the path is to an external package
+  /// in which case we simply return the original path.
   String _extractImportedPath() {
     String quoted = _extractQuoted();
     String importedPath;
 
+    bool relativeToSource = false;
+    bool isInternal = false;
+    ;
+
+    // extract the quoted path sans any package/dart prefix.
     if (quoted.startsWith(projectPrefix)) {
+      isInternal = true;
       importedPath = quoted.substring(projectPrefix.length);
     } else if (quoted.startsWith(dartPrefix)) {
       importedPath = quoted.substring(dartPrefix.length);
     } else if (quoted.startsWith(packagePrefix)) {
       importedPath = quoted.substring(packagePrefix.length);
     } else {
+      isInternal = true;
+      relativeToSource = true;
       importedPath = quoted;
     }
     // strip leading slash as a paths must be relative.
@@ -101,11 +114,16 @@ class Line {
     }
 
     String finalPath;
-    if (sourceLibrary.isExternal) {
-      // e.g. bin/main.dart and paths will be realtive to lib
-      finalPath = p.canonicalize(p.join(libRoot.path, importedPath));
+    if (isInternal) {
+      if (relativeToSource) {
+        finalPath =
+            p.canonicalize(p.join(sourceLibrary.directory, importedPath));
+      } else {
+        finalPath = p.canonicalize(p.join(libRoot.path, importedPath));
+      }
     } else {
-      finalPath = p.canonicalize(p.join(sourceLibrary.directory, importedPath));
+      // the import is to an external library so we don't modify it.
+      finalPath = importedPath;
     }
 
     return finalPath;
@@ -147,14 +165,14 @@ class Line {
     ///
 
     String line = originalLine;
+    bool replaced = false;
 
     if (_importType == ImportType.RELATIVE ||
         _importType == ImportType.LOCAL_PACKAGE) {
+      DartImportApp().debug("Processing line: ${originalLine}");
       String relativeFromPath = p.relative(fromFile.path, from: libRoot.path);
 
-      String importsRelativePath;
-
-      importsRelativePath = p.relative(importedPath, from: libRoot.path);
+      String importsRelativePath = p.relative(importedPath, from: libRoot.path);
 
       if (currentLibrary.sourceFile.path == fromFile.path) {
         // We are processing the file we are moving.
@@ -164,32 +182,44 @@ class Line {
             calcNewImportPath(fromFile.path, relativeImportPath, toFile.path);
 
         line = replaceImportPath('${newImportPath}');
+        replaced = true;
+        DartImportApp().debug("Line is from moved library");
       } else {
-        // processing any file but the one we are moving.
+        // processing any library but the one we are moving.
         String relativeToLibrary = p.relative(toFile.path,
             from: currentLibrary.sourceFile.parent.path);
-        String relativeToRoot = p.relative(toFile.path, from: libRoot.path);
+        String relativeToLibRoot = p.relative(toFile.path, from: libRoot.path);
 
         // does the import path match the file we are looking to change.
+        DartImportApp().debug(
+            "importsRelativePath: $importsRelativePath relativeFromPath: $relativeFromPath");
         if (importsRelativePath == relativeFromPath) {
           /// [externalLib] The library we are parsing is outside the lib dir (e.g. bin/main.dart)
           if (currentLibrary.isExternal) {
-            // relative to the 'lib' directory.
-            line =
-                replaceImportPath('package:${_projectName}/${relativeToRoot}');
-          } else if (_importType == ImportType.LOCAL_PACKAGE) {
+            DartImportApp().debug("Library is external, package is local");
             // relative to the 'lib' directory.
             line = replaceImportPath(
-                'package:${_projectName}/${relativeToLibrary}');
+                'package:${_projectName}/${relativeToLibRoot}');
+            replaced = true;
+          } else if (_importType == ImportType.LOCAL_PACKAGE) {
+            DartImportApp().debug("Library is internal, package is local");
+            // relative to the 'lib' directory.
+            line = replaceImportPath(
+                'package:${_projectName}/${relativeToLibRoot}');
+            replaced = true;
           } else {
             // must be a [ImportType.RELATIVE]
-
+            DartImportApp().debug("Library is internal, path is relative");
             line = replaceImportPath('${relativeToLibrary}');
+            replaced = true;
           }
         }
       }
     }
 
+    if (replaced) {
+      DartImportApp().debug("New line: ${line}");
+    }
     return line;
   }
 

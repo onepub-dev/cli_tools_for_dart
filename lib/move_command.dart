@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 
 import 'package:args/command_runner.dart';
+import 'package:square_cli/dart_import_app.dart';
 
+import 'dart_import_app.dart';
 import 'library.dart';
 import 'line.dart';
 import 'move_result.dart';
@@ -18,11 +20,29 @@ class MoveCommand extends Command<void> {
   @override
   String get name => "move";
 
-  void run() async {
-    // remove after testing complete
-    // Directory.current = "./test/data/";
+  MoveCommand() {
+    argParser.addOption("root",
+        defaultsTo: ".",
+        help: "The path to the root of your project.",
+        valueHelp: "path");
+    argParser.addFlag("debug",
+        defaultsTo: false, negatable: false, help: "Turns on debug ouput");
+    argParser.addFlag("version",
+        abbr: "v",
+        defaultsTo: false,
+        negatable: false,
+        help: "Outputs the version of drtimport and exits.");
+  }
 
+  void run() async {
+    Directory.current = argResults["root"];
     libRoot = Directory(p.join(Directory.current.path, 'lib'));
+
+    if (argResults["version"] == true) {
+      fullusage();
+    }
+
+    if (argResults["debug"] == true) DartImportApp().enableDebug();
 
     Line.init();
 
@@ -86,6 +106,7 @@ class MoveCommand extends Command<void> {
       print("");
     }
 
+    print("drtimport version: " + DartImportApp.VERSION);
     print("Usage: ");
     print("Run the move from the root of the package");
     print("move <from path> <to path>");
