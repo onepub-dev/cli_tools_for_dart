@@ -44,8 +44,6 @@ class MoveCommand extends Command<void> {
 
     if (argResults["debug"] == true) DartImportApp().enableDebug();
 
-    Line.init();
-
     if (argResults.rest.length != 2) {
       fullusage();
     }
@@ -59,16 +57,39 @@ class MoveCommand extends Command<void> {
       fullusage(error: "You must run a move from the root of the package.");
     }
 
+    Line.init();
+
     String from = argResults.rest[0];
     String to = argResults.rest[1];
 
-    File fromPath = await validFrom(from);
-    File toPath = await validTo(to);
+    FileSystemEntityType fromType = FileSystemEntity.typeSync(from);
+    if (fromType == FileSystemEntityType.directory) {
+      processDirectory(from, to);
+    } else {
+      File fromPath = await validFrom(from);
 
-    process(fromPath, toPath);
+      process(fromPath, to);
+    }
   }
 
-  void process(File fromPath, File toPath) async {
+  void processDirectory(String from, String to) async {
+    Directory fromPath = await validFromDirectory(from);
+
+    for (var entry in fromPath.listSync()) {
+      if (entry is File) {
+        process(entry, to);
+      }
+    }
+  }
+
+  void process(File fromPath, String to) async {
+    FileSystemEntityType toType = FileSystemEntity.typeSync(to);
+    if (toType == FileSystemEntityType.directory) {
+      // The [to] path is a directory so use the
+      // fromPaths filename to complete the target pathname.
+      to = p.join(to, p.basename(fromPath.path));
+    }
+    File toPath = await validTo(to);
     Stream<FileSystemEntity> files = Directory.current.list(recursive: true);
 
     List<FileSystemEntity> dartFiles =
@@ -116,11 +137,15 @@ class MoveCommand extends Command<void> {
     exit(-1);
   }
 
+  ///
+  /// [from] can be a file or a path.
+  ///
   Future<File> validFrom(String from) async {
     // all file paths are relative to lib/ but
     // the imports don't include lib so devs
     // will just pass in the name as the see it in the import statement (e.g. no lib)
     // but when we are validating the actual path we need the lib.
+
     File actualPath = File(p.canonicalize(p.join("lib", from)));
 
     if (!await actualPath.exists()) {
@@ -131,6 +156,28 @@ class MoveCommand extends Command<void> {
     return actualPath;
   }
 
+  ///
+  /// [from] can be a file or a path.
+  ///
+  Future<Directory> validFromDirectory(String from) async {
+    // all file paths are relative to lib/ but
+    // the imports don't include lib so devs
+    // will just pass in the name as the see it in the import statement (e.g. no lib)
+    // but when we are validating the actual path we need the lib.
+
+    Directory actualPath = Directory(p.canonicalize(p.join("lib", from)));
+
+    if (!await actualPath.exists()) {
+      fullusage(
+          error:
+              "The <fromPath> is not a valid filepath: '${actualPath.path}'");
+    }
+    return actualPath;
+  }
+
+  ///
+  /// [to] can be a file or a path.
+  ///
   Future<File> validTo(String to) async {
     // all file paths are relative to lib/ but
     // the imports don't include lib so devs
