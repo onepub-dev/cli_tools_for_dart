@@ -62,7 +62,7 @@ class Line {
   bool get isBuiltInLibrary => _importType == ImportType.BUILT_IN;
 
   bool __isImportLine(String normalised) {
-    return normalised.startsWith("import");
+    return normalised.startsWith("import") || normalised.startsWith("export");
   }
 
   bool __builtInLibrary(String normalised) {
@@ -70,12 +70,12 @@ class Line {
   }
 
   bool __isExternalPackage(String normalised) {
-    return normalised.startsWith("import 'package:") &&
-        !normalised.startsWith("import '${projectPrefix}");
+    return normalised.startsWith("import 'package:");
   }
 
   bool __isLocalPackage(String normalised) {
-    return normalised.startsWith("import '${projectPrefix}");
+    return normalised.startsWith("import '${projectPrefix}") ||
+        normalised.startsWith("export '${projectPrefix}");
   }
 
   // import 'package:square_phone/yaml.dart';  - consider
