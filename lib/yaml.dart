@@ -9,7 +9,7 @@ class Yaml {
   Yaml(this.filename);
 
   void load() async {
-    String contents = await File("pubspec.yaml").readAsString();
+    String contents = await File(filename).readAsString();
     document = loadYamlDocument(contents);
   }
 

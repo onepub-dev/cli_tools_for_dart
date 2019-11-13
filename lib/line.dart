@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:path/path.dart' as p;
+import 'package:square_cli/pubspec.dart';
 
 import 'dart_import_app.dart';
 import 'library.dart';
-import 'yaml.dart';
 
 enum ImportType {
   NOT // not an import line
@@ -155,9 +155,9 @@ class Line {
   /// reads the project name from the yaml file
   ///
   static Future<String> getProjectName() async {
-    Yaml yaml = Yaml("pubspec.yaml");
-    await yaml.load();
-    return yaml.getValue("name");
+    PubSpec pubSpec = PubSpec();
+    await pubSpec.load();
+    return pubSpec.name;
   }
 
   String update(Library currentLibrary, File fromFile, File toFile) {

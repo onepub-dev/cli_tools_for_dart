@@ -1,8 +1,8 @@
 name: square_cli
 description: A sample command-line application.
-# version: 1.0.0
+version: 1.0.1
 # homepage: https://www.example.com
-# author: bsutton <bsutton@noojee.com.au>
+author: bsutton <bsutton@noojee.com.au>
 
 environment:
   sdk: '>=2.5.0 <3.0.0'

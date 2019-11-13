@@ -1,6 +1,4 @@
 class DartImportApp {
-  static const VERSION = "1.1";
-
   static DartImportApp _self = DartImportApp._internal();
 
   bool _debug = false;

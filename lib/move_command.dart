@@ -9,6 +9,7 @@ import 'dart_import_app.dart';
 import 'library.dart';
 import 'line.dart';
 import 'move_result.dart';
+import 'pubspec.dart';
 
 class MoveCommand extends Command<void> {
   // This is the lib directory
@@ -62,13 +63,12 @@ class MoveCommand extends Command<void> {
     String from = argResults.rest[0];
     String to = argResults.rest[1];
 
-    FileSystemEntityType fromType = FileSystemEntity.typeSync(from);
-    if (fromType == FileSystemEntityType.directory) {
-      processDirectory(from, to);
+    if (isDirectory(from)) {
+      await processDirectory(from, to);
     } else {
       File fromPath = await validFrom(from);
 
-      process(fromPath, to);
+      await process(fromPath, to, false);
     }
   }
 
@@ -77,19 +77,29 @@ class MoveCommand extends Command<void> {
 
     for (var entry in fromPath.listSync()) {
       if (entry is File) {
-        process(entry, to);
+        await process(entry, to, true);
       }
     }
   }
 
-  void process(File fromPath, String to) async {
-    FileSystemEntityType toType = FileSystemEntity.typeSync(to);
-    if (toType == FileSystemEntityType.directory) {
+  void process(File fromPath, String to, bool fromDirectory) async {
+    if (isDirectory(to)) {
       // The [to] path is a directory so use the
       // fromPaths filename to complete the target pathname.
       to = p.join(to, p.basename(fromPath.path));
+    } else {
+      if (fromDirectory) {
+        // The target must also be a directory and it must exist
+        fullusage(
+            error:
+                "The <to> path ${expandPath(to)} MUST be a directory and it must exist");
+      }
     }
+
     File toPath = await validTo(to);
+
+    print("Renaming: ${fromPath} to ${toPath}");
+
     Stream<FileSystemEntity> files = Directory.current.list(recursive: true);
 
     List<FileSystemEntity> dartFiles =
@@ -119,22 +129,6 @@ class MoveCommand extends Command<void> {
 
     await fromPath.rename(toPath.path);
     print("Finished: scanned $scanned updated $updated");
-  }
-
-  void fullusage({String error}) {
-    if (error != null) {
-      print("Error: $error");
-      print("");
-    }
-
-    print("drtimport version: " + DartImportApp.VERSION);
-    print("Usage: ");
-    print("Run the move from the root of the package");
-    print("move <from path> <to path>");
-    print("e.g. move apps/string.dart  util/string.dart");
-    print(argParser.usage);
-
-    exit(-1);
   }
 
   ///
@@ -195,5 +189,33 @@ class MoveCommand extends Command<void> {
     for (MoveResult result in updatedFiles) {
       await result.library.overwrite(result.tmpFile);
     }
+  }
+
+  String expandPath(String path) {
+    return p.join("lib", path);
+  }
+
+  bool isDirectory(String path) {
+    FileSystemEntityType fromType = FileSystemEntity.typeSync(expandPath(path));
+    return (fromType == FileSystemEntityType.directory);
+  }
+
+  void fullusage({String error}) async {
+    if (error != null) {
+      print("Error: $error");
+      print("");
+    }
+
+    PubSpec pubSpec = PubSpec();
+    await pubSpec.load();
+    String version = pubSpec.version;
+    print("drtimport version: ${version}");
+    print("Usage: ");
+    print("Run the move from the root of the package");
+    print("move <from path> <to path>");
+    print("e.g. move apps/string.dart  util/string.dart");
+    print(argParser.usage);
+
+    exit(-1);
   }
 }
