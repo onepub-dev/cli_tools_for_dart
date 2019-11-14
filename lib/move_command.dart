@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 
 import 'package:args/command_runner.dart';
-import 'package:square_cli/dart_import_app.dart';
 
 import 'dart_import_app.dart';
 import 'library.dart';

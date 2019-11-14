@@ -1,9 +1,10 @@
 import 'dart:io';
+
 import 'package:path/path.dart' as p;
-import 'package:square_cli/pubspec.dart';
 
 import 'dart_import_app.dart';
 import 'library.dart';
+import 'pubspec.dart';
 
 enum ImportType {
   NOT // not an import line

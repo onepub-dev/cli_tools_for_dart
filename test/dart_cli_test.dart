@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
-import 'package:square_cli/move_command.dart';
-import 'package:square_cli/patch_command.dart';
+import 'package:dartcli/move_command.dart';
+import 'package:dartcli/patch_command.dart';
 
 @Timeout(Duration(seconds: 600))
 import 'package:test/test.dart';

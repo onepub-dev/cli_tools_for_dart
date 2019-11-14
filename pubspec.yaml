@@ -1,7 +1,7 @@
-name: square_cli
-description: A sample command-line application.
+name: dartcli
+description: An cli app to help you refactor you dart libraries because VSCode won't.
 version: 1.0.1
-# homepage: https://www.example.com
+homepage: https://github.com/bsutton/cli_tools_for_dart
 author: bsutton <bsutton@noojee.com.au>
 
 environment:
@@ -9,9 +9,15 @@ environment:
 
 dependencies:
   args: ^1.5.2
+  file_utils: ^0.1.3
   path: ^1.6.4
   pedantic: ^1.8.0
   yaml: ^2.2.0
+  intl: ^0.16.0
+  logger: ^0.7.0+2
+  recase: ^2.0.1
+
+
   
 #  path: ^1.6.0
 
@@ -22,4 +28,4 @@ dev_dependencies:
   ## To compilte
   ## pub global activate --source path ..
 executables:
-  drtimport: main
+  dartcli: main

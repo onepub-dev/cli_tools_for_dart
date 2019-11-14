@@ -1,4 +1,4 @@
-import 'package:square_cli/yaml.dart';
+import 'yaml.dart';
 
 class PubSpec {
   static PubSpec _self = PubSpec._internal();

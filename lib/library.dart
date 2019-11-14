@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
-import 'package:square_cli/dart_import_app.dart';
 
+import 'dart_import_app.dart';
 import 'line.dart';
 import 'move_result.dart';
 

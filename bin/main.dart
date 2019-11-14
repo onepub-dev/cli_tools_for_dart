@@ -1,8 +1,7 @@
 import 'package:args/command_runner.dart';
-import 'package:square_cli/move_command.dart';
-
-import 'package:square_cli/patch_command.dart';
-import 'package:square_cli/pubspec.dart';
+import 'package:dartcli/move_command.dart';
+import 'package:dartcli/patch_command.dart';
+import 'package:dartcli/pubspec.dart';
 
 void main(List<String> arguments) async {
   PubSpec pubSpec = PubSpec();
@@ -10,7 +9,7 @@ void main(List<String> arguments) async {
   String version = pubSpec.version;
 
   CommandRunner<void> runner =
-      CommandRunner("drtimport", "dart import management version: ${version}");
+      CommandRunner("drtimport", "Dart import management, version: ${version}");
 
   runner.addCommand(MoveCommand());
   runner.addCommand(PatchCommand());
