@@ -139,7 +139,7 @@ class MoveCommand extends Command<void> {
     // will just pass in the name as the see it in the import statement (e.g. no lib)
     // but when we are validating the actual path we need the lib.
 
-    File actualPath = File(p.canonicalize(p.join("lib", from)));
+    File actualPath = File(p.canonicalize(p.join("./lib", from)));
 
     if (!await actualPath.exists()) {
       fullusage(
@@ -158,7 +158,7 @@ class MoveCommand extends Command<void> {
     // will just pass in the name as the see it in the import statement (e.g. no lib)
     // but when we are validating the actual path we need the lib.
 
-    Directory actualPath = Directory(p.canonicalize(p.join("lib", from)));
+    Directory actualPath = Directory(p.canonicalize(p.join("./lib", from)));
 
     if (!await actualPath.exists()) {
       fullusage(
@@ -176,7 +176,7 @@ class MoveCommand extends Command<void> {
     // the imports don't include lib so devs
     // will just pass in the name as the see it in the import statement (e.g. no lib)
     // but when we are validating the actual path we need the lib.
-    File actualPath = File(p.canonicalize(p.join("lib", to)));
+    File actualPath = File(p.canonicalize(p.join("./lib", to)));
     if (!await actualPath.parent.exists()) {
       fullusage(
           error: "The <toPath> directory does not exist: ${actualPath.parent}");
@@ -191,7 +191,7 @@ class MoveCommand extends Command<void> {
   }
 
   String expandPath(String path) {
-    return p.join("lib", path);
+    return p.join("./lib", path);
   }
 
   bool isDirectory(String path) {
